@@ -1,0 +1,15 @@
+artifact_uri: file:///Users/fahmi.maulana/Documents/Github%20Fahmiam%20Repo/kedro-mlflow-tutorial/tutorial/mlruns/226941485793187036/533491d66e2b477f8b02660eae9663fa/artifacts
+end_time: 1706076002949
+entry_point_name: ''
+experiment_id: '226941485793187036'
+lifecycle_stage: active
+run_id: 533491d66e2b477f8b02660eae9663fa
+run_name: __default__
+run_uuid: 533491d66e2b477f8b02660eae9663fa
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1706076002329
+status: 4
+tags: []
+user_id: fahmi.maulana
