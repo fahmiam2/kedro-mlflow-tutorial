@@ -1,1 +1,4 @@
 *.DS_Store
+session_store.db
+stats.json
+mlruns/
