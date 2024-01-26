@@ -1,0 +1,39 @@
+X_train:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_train.csv
+
+y_train:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_train.csv
+
+X_val:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_val.csv
+
+y_val:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_val.csv
+
+X_test:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_test.csv
+
+y_test:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_test.csv
+
+log_compare_model:
+  type: json.JSONDataset
+  filepath: data/06_models/log_compare_model.json
