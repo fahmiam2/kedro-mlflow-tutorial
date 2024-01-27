@@ -8,3 +8,7 @@ model_options:
 
 model_evaluation:
   metric: f1
+  model_names:
+    - knn
+    - svm
+    - rf

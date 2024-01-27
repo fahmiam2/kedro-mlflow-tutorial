@@ -2,7 +2,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
-from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, precision_score, f1_score
+from sklearn.metrics import accuracy_score, roc_auc_score, recall_score, precision_score, f1_score, roc_curve, auc, confusion_matrix
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -13,6 +13,8 @@ import logging
 import mlflow
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +67,70 @@ def get_best_model(grid_search):
     best_score = grid_search.best_score_
     return best_params, best_estimator, best_score
 
-def knn_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTransformer) -> GridSearchCV:
+# validation
+def predict_validation_model(model, X_train, X_val, y_train, y_val, model_name):
+    best_params, best_estimator, best_score = get_best_model(model)
+    
+    logger.info(f"Best {model_name} hyperparameters: {best_params}")
+    logger.info(f"Best {model_name} accuracy: {best_score}")
+    
+    y_pred_train = model.predict(X_train)
+    y_pred_val = model.predict(X_val)
+    y_pred_val_prob = model.predict_proba(X_val)[:, 1] 
+    
+    # Log parameters
+    # mlflow.log_params({
+    #     **best_params
+    # })
+
+    # Log metrics
+    metrics = {
+        'train_accuracy': accuracy_score(y_train, y_pred_train),
+        'accuracy': accuracy_score(y_val, y_pred_val),
+        'auc': roc_auc_score(y_val, y_pred_val),
+        'recall': recall_score(y_val, y_pred_val),
+        'precision': precision_score(y_val, y_pred_val),
+        'f1': f1_score(y_val, y_pred_val)
+    }
+    # mlflow.log_metrics(metrics)
+    metrics.update({"model": f"{model_name}_model", "parameters": best_params})
+
+    # Log model artifact
+    # mlflow.sklearn.log_model(best_estimator, f"{model_name}_model")
+
+    return pd.Series(y_pred_val), pd.Series(y_pred_val_prob), {key: (str(value) if key == 'parameters' else value) for key, value in metrics.items()}
+
+# test
+def predict_test_model(model, X_train, X_test, y_train, y_test):
+
+    y_pred_train = model.predict(X_train)
+    y_pred_test = model.predict(X_test)
+    y_pred_test_prob = model.predict_proba(X_test)[:, 1] 
+    
+    # Log parameters
+    # mlflow.log_params({
+    #     **best_params
+    # })
+
+    # Log metrics
+    metrics = {
+        'train_accuracy': accuracy_score(y_train, y_pred_train),
+        'accuracy': accuracy_score(y_test, y_pred_test),
+        'auc': roc_auc_score(y_test, y_pred_test),
+        'recall': recall_score(y_test, y_pred_test),
+        'precision': precision_score(y_test, y_pred_test),
+        'f1': f1_score(y_test, y_pred_test)
+    }
+    # mlflow.log_metrics(metrics)
+    # metrics.update({"model": f"{model_name}_model", "parameters": best_params})
+
+    # Log model artifact
+    # mlflow.sklearn.log_model(best_estimator, f"{model_name}_model")
+
+    return metrics, pd.Series(y_pred_test), pd.Series(y_pred_test_prob)
+
+# models
+def train_knn_model(X_train, y_train, preprocessor: ColumnTransformer) -> GridSearchCV:
     knn = KNeighborsClassifier()
 
     param_grid_knn = {
@@ -83,43 +148,12 @@ def knn_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTransformer) -
                           cv=10,
                           n_jobs=-1,
                           verbose=1)
-
-    gs_knn.fit(X_train, np.ravel(y_train))
-
-    best_params, best_estimator, best_score = get_best_model(gs_knn)
-
-
-    logger.info(f"Best knn hyperparameters: {best_params}")
-    logger.info(f"Best knn accuracy: {best_score}")
-    logger.info(f"Best knn estimator: {best_estimator}")
     
-    y_pred_train = gs_knn.predict(X_train)
-    y_pred_val = gs_knn.predict(X_val)
-    
-    # Log parameters
-    mlflow.log_params({
-        **gs_knn.best_params_
-    })
+    gs_knn.fit(X_train, y_train)
 
-    # Log metrics
-    metrics = {
-        'train_accuracy': accuracy_score(y_train, y_pred_train),
-        'accuracy': accuracy_score(y_val, y_pred_val),
-        'auc': roc_auc_score(y_val, y_pred_val),
-        'recall': recall_score(y_val, y_pred_val),
-        'precision': precision_score(y_val, y_pred_val),
-        'f1': f1_score(y_val, y_pred_val)
-    }
-    mlflow.log_metrics(metrics)
-    metrics.update({"model": "knn_model", "parameters": gs_knn.best_params_})
+    return gs_knn, "knn"
 
-    # Log model artifact
-    mlflow.sklearn.log_model(best_estimator, "knn_model")
-
-    return gs_knn, {key: (str(value) if key == 'parameters' else value) for key, value in metrics.items()}
-
-
-def svm_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTransformer) -> GridSearchCV:
+def train_svm_model(X_train, y_train, preprocessor: ColumnTransformer) -> GridSearchCV:
     svm = SVC(random_state=1, max_iter=500, probability=True)
 
     param_grid_svm = {'svm__C': [10**i for i in range(-3, 4)],
@@ -136,40 +170,12 @@ def svm_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTransformer) -
                           cv=10,
                           n_jobs=-1,
                           verbose=1)
+    
+    gs_svm.fit(X_train, y_train)
 
-    gs_svm.fit(X_train, np.ravel(y_train))
+    return gs_svm, "svm"
 
-    best_params, best_estimator, best_score = get_best_model(gs_svm)
-
-    logger.info(f"Best SVM hyperparameters: {best_params}")
-    logger.info(f"Best SVM accuracy: {best_score}")
-
-    y_pred_train = gs_svm.predict(X_train)
-    y_pred_val = gs_svm.predict(X_val)
-
-    # Log parameters
-    mlflow.log_params({
-        **gs_svm.best_params_
-    })
-
-    # Log metrics
-    metrics = {
-        'train_accuracy': accuracy_score(y_train, y_pred_train),
-        'accuracy': accuracy_score(y_val, y_pred_val),
-        'auc': roc_auc_score(y_val, y_pred_val),
-        'recall': recall_score(y_val, y_pred_val),
-        'precision': precision_score(y_val, y_pred_val),
-        'f1': f1_score(y_val, y_pred_val)
-    }
-    mlflow.log_metrics(metrics)
-    metrics.update({"model": "svm_model", "parameters": gs_svm.best_params_})
-
-    # Log model artifact
-    mlflow.sklearn.log_model(best_estimator, "svm_model")
-
-    return gs_svm, {key: (str(value) if key == 'parameters' else value) for key, value in metrics.items()}
-
-def random_forest_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTransformer) -> GridSearchCV:
+def train_random_forest_model(X_train, y_train, preprocessor: ColumnTransformer) -> RandomizedSearchCV:
     rf = RandomForestClassifier()
 
     param_grid_rf = {
@@ -193,162 +199,32 @@ def random_forest_model(X_train, y_train, X_val, y_val, preprocessor: ColumnTran
                            n_jobs=-1, 
                            verbose=1,
                            random_state=1)
+    
+    rs_rf.fit(X_train, y_train)
 
-    rs_rf.fit(X_train, np.ravel(y_train))
+    return rs_rf, "rf"
 
-    best_params, best_estimator, best_score = get_best_model(rs_rf)
+def find_best_model(X_train, y_train, X_val, y_val, parameters: dict, *models):
 
-    logger.info(f"Best Random Forest hyperparameters: {best_params}")
-    logger.info(f"Best Random Forest accuracy: {best_score}")
-
-    y_pred_train = rs_rf.predict(X_train)
-    y_pred_val = rs_rf.predict(X_val)
-
-    # Log parameters
-    mlflow.log_params({
-        **rs_rf.best_params_
-    })
-
-    # Log metrics
-    metrics = {
-        'train_accuracy': accuracy_score(y_train, y_pred_train),
-        'accuracy': accuracy_score(y_val, y_pred_val),
-        'auc': roc_auc_score(y_val, y_pred_val),
-        'recall': recall_score(y_val, y_pred_val),
-        'precision': precision_score(y_val, y_pred_val),
-        'f1': f1_score(y_val, y_pred_val)
-    }
-    mlflow.log_metrics(metrics)
-    metrics.update({"model": "rf_model", "parameters": rs_rf.best_params_})
-
-    # Log model artifact
-    mlflow.sklearn.log_model(best_estimator, "rf_model")
-
-    return rs_rf, {key: (str(value) if key == 'parameters' else value) for key, value in metrics.items()}
-
-
-def find_best_model(X_train, y_train, X_val, y_val, preprocessor, parameters: dict):
-    models = [
-        knn_model(X_train, y_train, X_val, y_val, preprocessor),
-        svm_model(X_train, y_train, X_val, y_val, preprocessor),
-        random_forest_model(X_train, y_train, X_val, y_val, preprocessor),
-    ]
-
+    y_pred_val_df = pd.DataFrame()
+    y_pred_val_prob_df = pd.DataFrame()
     metrics_models = []
-    best_f1_score = 0
+    best_metric_score = 0
     best_model = None
 
-    for model, metrics in models:
+    for model, model_name in zip(models, parameters["model_names"]):
+        y_pred_val, y_pred_val_prob, metrics = predict_validation_model(model, X_train, y_train, X_val, y_val, model_name)
         metrics_models.append(metrics)
 
-        if metrics['f1'] > best_f1_score:
-            best_f1_score = metrics[parameters["metric"]]
+        if metrics[parameters["metric"]] > best_metric_score:
+            best_metric_score = metrics[parameters["metric"]]
             best_model = model
 
+        y_pred_val_df[f'{model_name}'] = y_pred_val
+        y_pred_val_prob_df[f'{model_name}'] = y_pred_val_prob
+
     logger.info(f"List metric models: {metrics_models}")
-    return best_model, metrics_models
-
-# def find_best_model(X_train, y_train, X_val, y_val, X_test, y_test):
-#     numeric_features = list(range(30))
-#     preprocessor = _preprocess_transformer(numeric_features)
-
-#     models = [
-#         knn_model(X_train, y_train, X_val, y_val, preprocessor),
-#         svm_model(X_train, y_train, X_val, y_val, preprocessor)
-#     ]
-
-#     # Get best models
-#     best_models = []
-#     for model in models:
-#         best_params, best_estimator, best_score = get_best_model(model)
-#         best_models.append((best_params, best_estimator, best_score))
-
-#     logger.info(best_models)
-#      # Select best model
-#     best_model = max(best_models, key=lambda x: x[2])
-#     best_estimator = best_model[1]
-
-#     # logger.info(best_model)
-#     # logger.info(best_estimator)
-
-#     # Retrain best model on entire training data
-#     best_estimator.fit(X_train, y_train)
-
-#     # Evaluate best model on test data
-#     test_score = best_estimator.score(X_test, y_test)
-#     logger.info(f"Test accuracy: {test_score}")
-
-#     return {"best_model": best_model, "best_estimator": best_estimator}
+    return best_model, metrics_models, y_pred_val_df, y_pred_val_prob_df
 
 
 
-
-
-
-"""
-def random_forest_model(X_train_val, y_train_val, preprocessor) -> GridSearchCV[Pipeline]:
-    rf = RandomForestClassifier()
-
-    param_grid_rf = {'n_estimators': [50, 100, 200],
-                     'max_depth': [None, 10, 20, 30]
-    }
-
-    pipe_rf = Pipeline(steps=[('preprocessor', preprocessor),
-                               ('rf', rf)])
-
-    gs_rf = GridSearchCV(estimator=pipe_rf,
-                         param_grid=param_grid_rf,
-                         scoring='accuracy',
-                         cv=10,
-                         n_jobs=-1,
-                         verbose=1)
-
-    gs_rf.fit(X_train_val, y_train_val)
-
-    return gs_rf
-
-def xgboost_model(X_train_val, y_train_val, preprocessor) -> GridSearchCV[Pipeline]:
-    xgb = XGBClassifier()
-
-    param_grid_xgb = {'n_estimators': [50, 100, 200],
-                      'max_depth': [3, 5, 7],
-                      'learning_rate': [0.01, 0.1, 0.2]
-    }
-
-    pipe_xgb = Pipeline(steps=[('preprocessor', preprocessor),
-                                ('xgb', xgb)])
-
-    gs_xgb = GridSearchCV(estimator=pipe_xgb,
-                          param_grid=param_grid_xgb,
-                          scoring='accuracy',
-                          cv=10,
-                          n_jobs=-1,
-                          verbose=1)
-
-    gs_xgb.fit(X_train_val, y_train_val)
-
-    return gs_xgb
-
-def lightgbm_model(X_train_val, y_train_val, preprocessor) -> GridSearchCV[Pipeline]:
-    lgbm = LGBMClassifier()
-
-    param_grid_lgbm = {'n_estimators': [50, 100, 200],
-                       'max_depth': [3, 5, 7],
-                       'learning_rate': [0.01, 0.1, 0.2]
-    }
-
-    pipe_lgbm = Pipeline(steps=[('preprocessor', preprocessor),
-                                 ('lgbm', lgbm)])
-
-    gs_lgbm = GridSearchCV(estimator=pipe_lgbm,
-                           param_grid=param_grid_lgbm,
-                           scoring='accuracy',
-                           cv=10,
-                           n_jobs=-1,
-                           verbose=1)
-
-    gs_lgbm.fit(X_train_val, y_train_val)
-
-    return gs_lgbm
-
-"""
