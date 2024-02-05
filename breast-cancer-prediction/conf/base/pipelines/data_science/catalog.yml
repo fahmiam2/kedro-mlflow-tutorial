@@ -1,0 +1,87 @@
+X_train:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_train.csv
+
+y_train:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_train.csv
+
+X_val:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_val.csv
+
+y_val:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_val.csv
+
+X_test:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/X_test.csv
+
+y_test:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/05_model_input/y_test.csv
+
+y_pred_val_df:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/09_prediction/y_pred_val.csv
+
+y_pred_val_prob_df:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/09_prediction/y_pred_val_prob.csv
+
+y_pred_test:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/09_prediction/y_pred_test.csv
+
+y_pred_test_prob:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataset
+  dataset:
+    type: pandas.CSVDataset
+    filepath: data/09_prediction/y_pred_test_prob.csv
+
+metrics_models:
+  type: json.JSONDataset
+  filepath: data/07_model_output/metrics_models.json
+
+metrics:
+  type: tracking.MetricsDataset
+  filepath: data/07_model_output/metric.json
+
+knn_object_model:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/knn_object_model.pkl
+  backend: pickle
+
+svm_object_model:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/svm_object_model.pkl
+  backend: pickle
+
+rf_object_model:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/rf_object_model.pkl
+  backend: pickle
+
+best_model:
+  type: pickle.PickleDataset
+  filepath: data/07_model_output/best_model.pkl
+  backend: pickle

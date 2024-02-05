@@ -1,0 +1,47 @@
+knn_model_cm:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/knn_model_cm.png
+  save_args:
+    format: png
+
+svm_model_cm:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/svm_model_cm.png
+  save_args:
+    format: png
+
+rf_model_cm:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/rf_model_cm.png
+  save_args:
+    format: png
+
+knn_model_roc_auc:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/knn_model_roc_auc.png
+  save_args:
+    format: png
+
+svm_model_roc_auc:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/svm_model_roc_auc.png
+  save_args:
+    format: png
+
+rf_model_roc_auc:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/rf_model_roc_auc.png
+  save_args:
+    format: png
+
+best_model_cm:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/best_model_cm.png
+  save_args:
+    format: png
+
+best_model_roc_auc:
+  type: matplotlib.MatplotlibWriter
+  filepath: data/08_reporting/best_model_roc_auc.png
+  save_args:
+    format: png

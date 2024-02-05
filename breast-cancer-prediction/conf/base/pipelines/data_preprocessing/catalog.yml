@@ -1,0 +1,8 @@
+diagnostic:
+  type: pandas.CSVDataset
+  filepath: data/01_raw/diagnostic.csv
+
+preprocessed_diagnostic:
+  type: pandas.ParquetDataset
+  filepath: data/03_primary/preprocessed_diagnostic.pq
+  
